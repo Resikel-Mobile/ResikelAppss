@@ -3,11 +3,11 @@ package com.example.login_resikel
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.view.Surface
 import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -18,31 +18,29 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -51,40 +49,61 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.login_resikel.Room.AppDatabase
+import com.example.login_resikel.Room.Keranjang
+import com.example.login_resikel.Room.KeranjangRepository
+import com.example.login_resikel.Room.KeranjangViewModel
+import com.example.login_resikel.Room.KeranjangViewModelFactory
 import com.example.login_resikel.ui.theme.Login_ResikelTheme
+import com.example.login_resikel.ui.theme.SearchContainer
+import com.example.login_resikel.ui.theme.SimpleTextButton
+import com.example.login_resikel.ui.theme.iconWithBackground
 
 
 class WasteTypeActivity : ComponentActivity() {
+
+    public lateinit var viewModel: KeranjangViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val database = AppDatabase.getDatabase(this@WasteTypeActivity)
+        val repository = KeranjangRepository(database.keranjangDao())
+        val factory = KeranjangViewModelFactory(repository)
+        viewModel = ViewModelProvider(this, factory).get(KeranjangViewModel::class.java)
+        viewModel.fetchTotalQty()
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             Login_ResikelTheme {
-                MainScreen()
+                MainScreen(viewModel)
             }
         }
     }
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(viewModel: KeranjangViewModel) {
+    val totalQty by viewModel.totalQty.observeAsState(0)
+    val items = listOf(
+        NavItem("home", R.drawable.home, R.drawable.home_filled, "Home"),
+        NavItem("graph", R.drawable.graph, R.drawable.graph_filled,"graph"),
+        NavItem("history", R.drawable.history, R.drawable.history_filled, "history"),
+        NavItem("profile", R.drawable.profile, R.drawable.profile_filled,"Profile")
+    )
     val navController = rememberNavController()
-
     val context = LocalContext.current
     val activity = context as? ComponentActivity
 
     // Cek jika konteks berhasil di-cast menjadi Activity
     activity?.window?.let { window ->
-        // Mengatur status bar
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val insetsController = window.insetsController
             insetsController?.setSystemBarsAppearance(
@@ -96,29 +115,38 @@ fun MainScreen() {
     }
 
     Scaffold(
-        topBar = { HeaderSection() },
-        bottomBar = { BottomNavigationBar(navController) },
-        floatingActionButton = { floatingButton(icon = R.drawable.delete)},
+        topBar = { WasteTypeActivityHeader() },
+        bottomBar = { CustomBottomNavigationBar(navController, items) },
+        floatingActionButton = { floatingButton(icon = R.drawable.trash, iconColor = Color.White, itemCount = totalQty )},
         contentWindowInsets = WindowInsets.systemBars,
     ) { innerPadding ->
-        Column(modifier = Modifier
-            .fillMaxWidth()) {
-            NavHost(
-                navController = navController,
-                startDestination = "home",
-                Modifier.padding(innerPadding)
-            ) {
-                composable("home") { HomeScreen(innerPadding) }
-                composable("bookmark") {  }
-                composable("lock") { }
-                composable("profile") { }
+
+        Box(modifier = Modifier.fillMaxSize()){
+            Column(modifier = Modifier
+                .fillMaxWidth()) {
+                NavHost(
+                    navController = navController,
+                    startDestination = "home",
+                    Modifier.padding(innerPadding)
+                ) {
+                    composable("home") { HomeScreen(innerPadding, viewModel = viewModel) }
+                    composable("graph") {  }
+                    composable("history") { HistoryBody(viewModel)}
+                    composable("profile") { }
+                }
+            }
+            Box(modifier = Modifier
+                .padding(bottom = 88.dp)
+                .align(Alignment.BottomCenter)){
+                iconWithBackground(imageIcon = painterResource(id = R.drawable.camera), iconSize = 32.dp, iconColor = Color.White, backgroundColor = colorResource(
+                    id = R.color.main_green), backgroundSize = 80.dp)
             }
         }
     }
 }
 
 @Composable
-fun HomeScreen(innerPadding: PaddingValues) {
+fun HomeScreen(innerPadding: PaddingValues, viewModel: KeranjangViewModel) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -128,49 +156,57 @@ fun HomeScreen(innerPadding: PaddingValues) {
             SearchContainer("Search...", 24.dp, 1.dp, 16.dp, 0.dp)
         }
         item {
-            CategoriesSection()
+            CategoriesSection(viewModel = viewModel)
         }
         item {
-            SelectTrashSection()
+            SelectTrashSection(viewModel = viewModel)
         }
     }
 }
 
 @Composable
-fun floatingButton(icon: Int){
+fun floatingButton(icon: Int, iconColor:Color, itemCount: Int){
     val context = LocalContext.current
     val interactionSource = remember { MutableInteractionSource() }
 
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(72.dp) // Ukuran box
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-            .background(
-                color = colorResource(id = R.color.main_green),
-                shape = RoundedCornerShape(36.dp)
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null
-            ) {
-                val intent = Intent(context, TrashItemListActivity::class.java)
-                context.startActivity(intent)
-            }
+    Box(){
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(72.dp)
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .background(
+                    color = colorResource(id = R.color.main_green),
+                    shape = RoundedCornerShape(36.dp)
+                )
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) {
+                    val intent = Intent(context, TrashItemListActivity::class.java)
+                    context.startActivity(intent)
+                }
 
-    ) {
-        Icon(
-            painter = painterResource(id = icon),
-            contentDescription = null,
-            modifier = Modifier.size(28.dp),
-            tint = Color.Unspecified
-        )
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                modifier = Modifier.size(28.dp),
+                tint = iconColor
+            )
+        }
+        Box(modifier = Modifier
+            .wrapContentSize()
+            .padding(top = 32.dp)
+            .align(Alignment.BottomEnd)){
+            SimpleTextButton(backgroundSize = 28.dp, textStyle = TextStyle(fontWeight = FontWeight.Bold) , backgroundColor = colorResource(id = R.color.red_2), textContent = itemCount.toString() , textSize = 12.sp , textColor = Color.White, backgroundRadius = 99.dp)
+        }
     }
 }
 
 
 @Composable
-fun HeaderSection() {
+fun WasteTypeActivityHeader() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -189,6 +225,7 @@ fun HeaderSection() {
         Icon(
             painter = painterResource(id = R.drawable.guard),
             contentDescription = null,
+            tint = Color.Unspecified,
             modifier = Modifier
                 .size(24.dp)
                 .weight(1f)
@@ -196,53 +233,8 @@ fun HeaderSection() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchContainer(placeHolders: String, padding: Dp, PTop: Dp, PHorizon: Dp, elevationVal : Dp
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(padding)
-            .padding(top = PTop)
-            .shadow(elevationVal, shape = RoundedCornerShape(99.dp))
-            .background(color = Color.White, shape = RoundedCornerShape(99.dp))
-            .padding(horizontal = PHorizon)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.search),
-                tint = Color.Unspecified,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp)
-            )
-            TextField(
-                value = "",
-                onValueChange = {},
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(text = placeHolders) },
-                textStyle = TextStyle(
-                    fontFamily = FontFamily(Font(R.font.poppins_semi_bold)),
-                    fontSize = 10.sp
-                ),
-                colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent,
-                    cursorColor = Color.Black,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent
-                )
-            )
-        }
-    }
-}
-
-@Composable
-fun CategoriesSection() {
+fun CategoriesSection(viewModel: KeranjangViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -277,36 +269,20 @@ fun CategoriesSection() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            CategoryButton("Organic", R.drawable.organic)
-            CategoryButton("Non-Organic", R.drawable.nonorganic)
-            CategoryButton("B3", R.drawable.b3)
-            CategoryButton("All", R.drawable.all)
+            CategoryButton("Organic", R.drawable.organic, viewModel = viewModel)
+            CategoryButton("Non-Organic", R.drawable.nonorganic, viewModel = viewModel)
+            CategoryButton("B3", R.drawable.b3, viewModel = viewModel)
+            CategoryButton("All", R.drawable.all, viewModel = viewModel)
         }
     }
 }
 
 @Composable
-fun CategoryButton(text: String, icon: Int) {
+fun CategoryButton(text: String, icon: Int, viewModel: KeranjangViewModel) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(72.dp) // Ukuran box
-                .padding(horizontal = 8.dp, vertical = 8.dp)
-                .background(
-                    color = colorResource(id = R.color.white),
-                    shape = RoundedCornerShape(36.dp)
-                ) // White rounded container
-        ) {
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = Color.Unspecified
-            )
-        }
+        iconWithBackground(imageIcon = painterResource(id = icon), backgroundColor = Color.White, backgroundSize = 72.dp, iconSize = 32.dp)
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = text,
@@ -320,7 +296,7 @@ fun CategoryButton(text: String, icon: Int) {
 
 
 @Composable
-fun SelectTrashSection() {
+fun SelectTrashSection(viewModel: KeranjangViewModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -421,11 +397,11 @@ fun SelectTrashSection() {
         ),
 
         )
-    NonScrollableGrid(categoryItems)
+    NonScrollableGrid(categoryItems, viewModel = viewModel)
 }
 
 @Composable
-fun NonScrollableGrid(listItems : List<CategoryItem>) {
+fun NonScrollableGrid(listItems : List<CategoryItem>, viewModel: KeranjangViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -439,7 +415,7 @@ fun NonScrollableGrid(listItems : List<CategoryItem>) {
                 horizontalArrangement = Arrangement.SpaceAround,
             ) {
                 rowItems.forEach { item ->
-                    CategoryItemLayout(icon = item.icon, name = item.name , desc = item.desc, point = item.point)
+                    CategoryItemLayout(icon = item.icon, name = item.name , desc = item.desc, point = item.point, viewModel = viewModel)
                 }
             }
         }
@@ -447,7 +423,9 @@ fun NonScrollableGrid(listItems : List<CategoryItem>) {
 }
 
 @Composable
-fun CategoryItemLayout(icon:Int, name:String, desc:String, point:String){
+fun CategoryItemLayout(icon:Int, name:String, desc:String, point:String, viewModel: KeranjangViewModel){
+    val interactionSource = remember { MutableInteractionSource() }
+    val context = LocalContext.current
     Column(modifier = Modifier
         .width(164.dp)
         .height(220.dp)
@@ -503,85 +481,93 @@ fun CategoryItemLayout(icon:Int, name:String, desc:String, point:String){
                     .background(
                         color = colorResource(id = R.color.main_green),
                         shape = RoundedCornerShape(36.dp)
-                    ) // White rounded container
+                    )
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null
+                    ) {
+                        val Keranjang = Keranjang(itemName = name, quantity = 0)
+                        viewModel.addItem(item = Keranjang)
+                        viewModel.fetchTotalQty()
+                    }
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.plus),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .padding(8.dp),
-                    tint = Color.Unspecified
+                iconWithBackground(
+                    imageIcon = painterResource(id = R.drawable.plus),
+                    backgroundColor = colorResource(id = R.color.main_green),
+                    iconSize = 32.dp,
+                    backgroundSize = 32.dp
                 )
             }
         }
     }
 }
 
-
 @Composable
-fun BottomNavigationBar(navController: NavController) {
-    val items = listOf(
-        NavItem("home", R.drawable.home, "Home"),
-        NavItem("bookmark", R.drawable.bookmark, "Bookmark"),
-        NavItem("lock", R.drawable.lock, "Lock"),
-        NavItem("profile", R.drawable.profile, "Profile")
-    )
+fun CustomBottomNavigationBar(
+    navController: NavController,
+    items: List<NavItem>,
+) {
+    Box(modifier = Modifier
+        .padding(bottom = 40.dp)
+        .fillMaxWidth()
+        .wrapContentHeight(),
+    ){
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .align(Alignment.BottomCenter)
+            .background(Color.Transparent)
+        ){
+            Image(modifier = Modifier.
+            fillMaxWidth(),
+                painter = painterResource(id = R.drawable.bottom_nav_bg),
+                contentDescription = "map",
+                contentScale = ContentScale.Fit
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Transparent)
+                    .padding(vertical = 24.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-    NavigationBar(
-        containerColor = colorResource(id = R.color.light_green)
-    ) {
-        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-        items.forEach { item ->
-            val isSelected = currentRoute == item.route
+                items.forEachIndexed { index, item ->
+                    val isSelected = currentRoute == item.route
 
-            NavigationBarItem(
-                icon = {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .padding(
+                                start = if (index == 2) 32.dp else 0.dp,
+                                end = if (index == 1) 32.dp else 0.dp
+                            )
+                            .clickable {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
                     ) {
                         Icon(
-                            painter = painterResource(id = item.icon),
+                            painter = if(isSelected) painterResource(id = item.iconSelected) else painterResource(id = item.icon),
                             contentDescription = item.label,
-                            modifier = Modifier.size(20.dp)
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(24.dp)
                         )
-                        if (isSelected) {
-                            Box(
-                                modifier = Modifier
-                                    .height(2.dp) // Ketebalan garis
-                                    .width(24.dp) // Panjang garis
-                                    .background(Color.Black) // Warna garis
-                                    .padding(top = 64.dp) // Jarak garis dari ikon
-                            )
-                        }
                     }
-                },
-                selected = isSelected,
-                onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = Color.Transparent,
-                    selectedIconColor = colorResource(id = R.color.main_green), // Warna ikon saat terpilih
-                    unselectedIconColor = colorResource(id = R.color.main_green) // Warna ikon saat tidak terpilih
-                ),
-                modifier = Modifier.padding(0.dp)
-            )
+
+                }
+            }
         }
     }
 }
 
 
-data class NavItem(val route: String, val icon: Int, val label: String)
+
+data class NavItem(val route: String, val icon: Int, val iconSelected:Int, val label: String)
 data class CategoryItem(val icon:Int, val name:String, val desc:String, val point:String, val count:Int)
-
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    MainScreen()
-}

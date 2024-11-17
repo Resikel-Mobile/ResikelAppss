@@ -49,8 +49,10 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.login_resikel.ui.theme.HeaderSection
 import com.example.login_resikel.ui.theme.Login_ResikelTheme
 
 
@@ -66,6 +68,7 @@ class TrashItemListActivity : ComponentActivity() {
     }
 }
 
+@Preview(showBackground = true)
 @Composable
 fun TrashListScreen() {
     val context = LocalContext.current
@@ -82,7 +85,12 @@ fun TrashListScreen() {
         }
     }
     Scaffold(
-        topBar = { HeaderSectionV2("Item In Your Trash") },
+        topBar = { HeaderSection(
+            "Item In Your Trash",
+            R.color.main_green,
+            R.color.white,
+            R.color.main_green
+        ) },
         bottomBar = { UploadProofSection() },
         contentWindowInsets = WindowInsets.systemBars,
     ) { innerPadding ->
@@ -121,53 +129,6 @@ fun TrashListScreen() {
             .padding(innerPadding)
             .fillMaxWidth()
             .padding(top = 16.dp))
-    }
-}
-
-@Composable
-fun HeaderSectionV2(headerText:String){
-    val context = LocalContext.current
-    val interactionSource = remember { MutableInteractionSource() }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 32.dp)
-            .padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(56.dp)
-                .padding(horizontal = 8.dp, vertical = 8.dp)
-                .background(
-                    color = colorResource(id = R.color.main_green),
-                    shape = RoundedCornerShape(36.dp)
-                )
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null
-                ) {
-                    (context as? Activity)?.finish()
-                }
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.arrowleft),
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = Color.Unspecified
-            )
-        }
-        Text(
-            text = headerText,
-            modifier = Modifier
-                .weight(4f)
-                .padding(start = 16.dp),
-            fontFamily = FontFamily(Font(R.font.poppins_bold)),
-            fontSize = 20.sp,
-            color = colorResource(id = R.color.main_green),
-        )
     }
 }
 
@@ -291,6 +252,8 @@ fun UploadProofSection() {
 }
 
 
+
+
 @Composable
 fun TrashItemListBody(listItems: List<CategoryItem>, modifier: Modifier) {
     LazyColumn(
@@ -394,7 +357,7 @@ fun TrashListItemLayout(name :String, desc:String, point:String, count:Int, icon
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(24.dp)
                             .background(
                                 color = Color.White,
                                 shape = RoundedCornerShape(36.dp)
@@ -407,7 +370,7 @@ fun TrashListItemLayout(name :String, desc:String, point:String, count:Int, icon
                     ) {
                         Text(
                             text = "-",
-                            style = TextStyle(fontWeight = FontWeight.Bold), fontSize = 10.sp,
+                            style = TextStyle(fontWeight = FontWeight.Bold), fontSize = 12.sp,
                             color = Color.Black,
                             textAlign = TextAlign.Center
                         )
@@ -425,7 +388,7 @@ fun TrashListItemLayout(name :String, desc:String, point:String, count:Int, icon
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(24.dp)
                             .background(
                                 color = Color.White,
                                 shape = RoundedCornerShape(36.dp)
@@ -438,7 +401,7 @@ fun TrashListItemLayout(name :String, desc:String, point:String, count:Int, icon
                     ) {
                         Text(
                             text = "+",
-                            style = TextStyle(fontWeight = FontWeight.Bold), fontSize = 10.sp,
+                            style = TextStyle(fontWeight = FontWeight.Bold), fontSize = 12.sp,
                             color = Color.Black,
                             textAlign = TextAlign.Center
                         )

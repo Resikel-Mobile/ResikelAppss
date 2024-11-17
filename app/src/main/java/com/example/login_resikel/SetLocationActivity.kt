@@ -39,9 +39,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.login_resikel.ui.theme.Login_ResikelTheme
+import com.example.login_resikel.ui.theme.SearchContainer
+import com.example.login_resikel.ui.theme.iconWithBackground
 
 
 class SetLocationActivity : ComponentActivity() {
@@ -56,6 +59,7 @@ class SetLocationActivity : ComponentActivity() {
     }
 }
 
+@Preview(showBackground = true)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun SetLocationScreen() {
@@ -103,6 +107,7 @@ fun SetPickUpLocationSection() {
     val isOpen = remember { mutableStateOf(false) }
     val isButtonClicked = remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -184,23 +189,12 @@ fun SetPickUpLocationSection() {
                                         .padding(bottom = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 )  {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier
-                                            .size(64.dp) // Ukuran box
-                                            .padding(horizontal = 8.dp, vertical = 8.dp)
-                                            .background(
-                                                color = colorResource(id = R.color.blue),
-                                                shape = RoundedCornerShape(36.dp)
-                                            )
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.homv2),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp),
-                                            tint = Color.White
-                                        )
-                                    }
+                                    iconWithBackground(imageIcon = painterResource(id = R.drawable.homev2),
+                                        iconSize = 20.dp,
+                                        iconColor = Color.White,
+                                        backgroundSize = 64.dp,
+                                        backgroundRadius = 99.dp)
+
                                     TextField(
                                         value = "",
                                         onValueChange = {},
@@ -238,23 +232,13 @@ fun SetPickUpLocationSection() {
                                         .padding(top = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 )  {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier
-                                            .size(64.dp) // Ukuran box
-                                            .padding(horizontal = 8.dp, vertical = 8.dp)
-                                            .background(
-                                                color = colorResource(id = R.color.light_green2),
-                                                shape = RoundedCornerShape(36.dp)
-                                            )
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.location),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp),
-                                            tint = Color.White
-                                        )
-                                    }
+                                    iconWithBackground(imageIcon = painterResource(id = R.drawable.location),
+                                        iconSize = 20.dp,
+                                        iconColor = Color.White,
+                                        backgroundSize = 64.dp,
+                                        backgroundColor = colorResource(id = R.color.light_green2),
+                                        backgroundRadius = 99.dp)
+
                                     TextField(
                                         value = "",
                                         onValueChange = {},
@@ -301,7 +285,7 @@ fun SetPickUpLocationSection() {
                         Row(modifier = Modifier
                             .fillMaxWidth()
                             .height(72.dp)
-                            .weight(if(isMotorClicked.value) 2f else 1f)
+                            .weight(if (isMotorClicked.value) 2f else 1f)
                             .padding(horizontal = 8.dp)
                             .background(
                                 color = if (isMotorClicked.value) colorResource(id = R.color.main_green) else Color.White,
@@ -311,7 +295,8 @@ fun SetPickUpLocationSection() {
                                 interactionSource = interactionSource,
                                 indication = null
                             ) {
-                                isMotorClicked.value = !isMotorClicked.value
+                                if (isMotorClicked.value != true) isMotorClicked.value =
+                                    !isMotorClicked.value
                             }
                             .border(
                                 width = 1.dp,
@@ -334,7 +319,8 @@ fun SetPickUpLocationSection() {
                             androidx.compose.animation.AnimatedVisibility(visible = isMotorClicked.value) {
                                 Column(
                                     modifier = Modifier
-                                        .wrapContentSize()
+                                        .wrapContentWidth()
+                                        .fillMaxHeight()
                                         .padding(start = 8.dp),
                                     verticalArrangement = Arrangement.Center
                                 ) {
@@ -359,11 +345,11 @@ fun SetPickUpLocationSection() {
                             }
                         }
 
-                        // kolom motor
+                        // kolom truk
                         Row(modifier = Modifier
                             .fillMaxWidth()
                             .height(72.dp)
-                            .weight(if(!isMotorClicked.value) 2f else 1f)
+                            .weight(if (!isMotorClicked.value) 2f else 1f)
                             .padding(horizontal = 8.dp)
                             .background(
                                 color = if (!isMotorClicked.value) colorResource(id = R.color.main_green) else Color.White,
@@ -373,7 +359,8 @@ fun SetPickUpLocationSection() {
                                 interactionSource = interactionSource,
                                 indication = null
                             ) {
-                                isMotorClicked.value = !isMotorClicked.value
+                                if (isMotorClicked.value == true) isMotorClicked.value =
+                                    !isMotorClicked.value
                             }
                             .border(
                                 width = 1.dp,
@@ -385,7 +372,7 @@ fun SetPickUpLocationSection() {
 
                         {
                             Icon(
-                                painter = painterResource(id = R.drawable.truk),
+                                painter = painterResource(id = R.drawable.truck),
                                 contentDescription = null,
                                 modifier = Modifier.size(32.dp),
                                 tint = if(!isMotorClicked.value) colorResource(id = R.color.white) else colorResource(
@@ -398,21 +385,20 @@ fun SetPickUpLocationSection() {
                                     modifier = Modifier
                                         .wrapContentSize()
                                         .padding(start = 8.dp),
-                                    verticalArrangement = Arrangement.Center
-                                ) {
+                                    verticalArrangement = Arrangement.Center) {
                                     Text(
-                                        text = "Motorcylce",
                                         modifier = Modifier
-                                            .padding(top = 2.dp),
+                                            .padding(0.dp),
+                                        text = "Cargo / Truck",
                                         fontFamily = FontFamily(Font(R.font.dm_sans_medium)),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         color = colorResource(id = R.color.white),
                                     )
                                     Text(
-                                        text = "Estimated time 30m",
                                         modifier = Modifier
-                                            .padding(bottom = 2.dp),
+                                            .padding(0.dp),
+                                        text = "Estimated time 30m",
                                         fontFamily = FontFamily(Font(R.font.dm_sans_medium)),
                                         fontSize = 10.sp,
                                         color = colorResource(id = R.color.white),
@@ -436,6 +422,13 @@ fun SetPickUpLocationSection() {
                     color = colorResource(id = R.color.light_green2),
                     shape = RoundedCornerShape(36.dp)
                 )
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) {
+                    val intent = Intent(context, TrackingOrderActivity::class.java)
+                    context.startActivity(intent)
+                }
         ) {
             Row(modifier = Modifier
                 .fillMaxWidth(),
